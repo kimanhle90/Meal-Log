@@ -432,7 +432,6 @@
           class: 'meal-hero',
           style: 'background:' + visual.gradient
         }, [h('span', { class: 'meal-hero-emoji' }, [visual.emoji]), heroActions]);
-    container.appendChild(hero);
 
     var body = h('div', { class: 'meal-detail-body' }, []);
     body.appendChild(h('div', { class: 'detail-eyebrow' }, [plan.label]));
@@ -491,7 +490,8 @@
       body.appendChild(acvRow);
     }
 
-    container.appendChild(body);
+    var card = h('div', { class: 'meal-card' }, [hero, body]);
+    container.appendChild(card);
     return container;
   }
 

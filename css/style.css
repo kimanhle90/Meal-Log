@@ -44,7 +44,7 @@ main#app {
 
 /* ---------- Shared glass surface ---------- */
 
-.glass, .meal-summary-card, .meal-detail-body, .history-card,
+.glass, .meal-summary-card, .meal-card, .history-card,
 .icon-btn, .history-link, .back-btn, .now-btn, .undo-skip-btn,
 .range-btn, .text-input, .time-input, .weight-card {
   background: var(--glass-bg);
@@ -434,15 +434,17 @@ main#app {
 
 /* ---------- Meal detail view ---------- */
 
-.meal-hero {
-  height: 190px;
+.meal-card {
   border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.meal-hero {
+  height: 380px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 14px 40px rgba(0, 0, 0, 0.35);
   position: relative;
   overflow: hidden;
 }
@@ -502,9 +504,7 @@ main#app {
 }
 
 .meal-detail-body {
-  border-radius: var(--radius);
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .time-row {
