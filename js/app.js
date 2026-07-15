@@ -99,7 +99,8 @@
             }
           })
         ]),
-        h('div', { class: 'date-headline day-type-' + dayRecord.dayType }, [plan.shortLabel])
+        h('div', { class: 'date-headline day-type-' + dayRecord.dayType }, [plan.shortLabel]),
+        plan.firstMealHint ? h('div', { class: 'first-meal-hint' }, [plan.firstMealHint]) : null
       ]),
       h('button', {
         class: 'icon-btn',

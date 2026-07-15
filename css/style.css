@@ -105,6 +105,13 @@ main#app {
   color: var(--accent);
 }
 
+.first-meal-hint {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text);
+  margin-top: 2px;
+}
+
 .page-headline {
   font-weight: 200;
   font-size: 2.8rem;
