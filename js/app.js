@@ -2,8 +2,9 @@
   'use strict';
 
   var state = {
-    tab: 'today',
+    view: 'day', // 'day' | 'meal' | 'history'
     date: MealLog.today(),
+    activeMealKey: null,
     historyRange: 7
   };
 
@@ -44,33 +45,41 @@
     return !!(mealData && mealData.skipped);
   }
 
+  function getVisual(mealKey) {
+    return MealLog.MEAL_VISUALS[mealKey] || { emoji: '🍽️', gradient: 'linear-gradient(135deg, #999, #666)' };
+  }
+
+  function currentTimeStr() {
+    var d = new Date();
+    return MealLog.pad2(d.getHours()) + ':' + MealLog.pad2(d.getMinutes());
+  }
+
   function render() {
     appEl.innerHTML = '';
-    var nav = h('div', { class: 'tabs' }, [
-      h('button', {
-        class: 'tab-btn' + (state.tab === 'today' ? ' active' : ''),
-        onclick: function () { state.tab = 'today'; render(); }
-      }, ['Today']),
-      h('button', {
-        class: 'tab-btn' + (state.tab === 'history' ? ' active' : ''),
-        onclick: function () { state.tab = 'history'; render(); }
-      }, ['History'])
-    ]);
-    appEl.appendChild(nav);
-
-    if (state.tab === 'today') {
-      appEl.appendChild(renderToday());
+    if (state.view === 'meal') {
+      appEl.appendChild(renderMealDetailView());
+    } else if (state.view === 'history') {
+      appEl.appendChild(renderHistoryView());
     } else {
-      appEl.appendChild(renderHistory());
+      appEl.appendChild(renderDayView());
     }
   }
 
-  // ---------- Today view ----------
+  // ---------- Day view (main) ----------
 
-  function renderToday() {
-    var container = h('div', { class: 'view' }, []);
+  function renderDayView() {
     var dayRecord = MealLog.getDay(state.date);
     var plan = MealLog.PLANS[dayRecord.dayType];
+    var container = h('div', { class: 'view day-view' }, []);
+
+    var topBar = h('div', { class: 'top-bar' }, [
+      h('span', { class: 'brand' }, ['Meal Log']),
+      h('button', {
+        class: 'history-link',
+        onclick: function () { state.view = 'history'; render(); }
+      }, ['History ›'])
+    ]);
+    container.appendChild(topBar);
 
     var dateBar = h('div', { class: 'date-bar' }, [
       h('button', {
@@ -87,8 +96,10 @@
           }
         }),
         h('div', { class: 'friendly-date' }, [MealLog.friendlyDate(state.date)]),
-        h('span', { class: 'day-badge ' + dayRecord.dayType }, [plan.label]),
-        h('span', { class: 'week-badge' }, ['Week ' + MealLog.getWeekNumber(state.date)])
+        h('div', { class: 'badge-row' }, [
+          h('span', { class: 'day-badge ' + dayRecord.dayType }, [plan.label]),
+          h('span', { class: 'week-badge' }, ['Week ' + MealLog.getWeekNumber(state.date)])
+        ])
       ]),
       h('button', {
         class: 'icon-btn',
@@ -104,19 +115,66 @@
       }, ['Jump to today']));
     }
 
+    var list = h('div', { class: 'meal-list' }, []);
     plan.meals.forEach(function (mealDef) {
-      container.appendChild(renderMealCard(mealDef, dayRecord));
+      list.appendChild(renderMealSummaryCard(mealDef, dayRecord));
     });
+    container.appendChild(list);
 
     return container;
   }
 
-  function currentTimeStr() {
-    var d = new Date();
-    return MealLog.pad2(d.getHours()) + ':' + MealLog.pad2(d.getMinutes());
+  function statusChip(mealData) {
+    if (isMealSkipped(mealData)) {
+      return h('span', { class: 'chip chip-skipped' }, ['Skipped']);
+    }
+    if (isMealLogged(mealData)) {
+      return h('span', { class: 'chip chip-logged' }, ['✓ ' + mealData.time]);
+    }
+    return h('span', { class: 'chip chip-pending' }, ['Tap to log']);
   }
 
-  function renderMealCard(mealDef, dayRecord) {
+  function renderMealSummaryCard(mealDef, dayRecord) {
+    var mealData = dayRecord.meals[mealDef.key];
+    var visual = getVisual(mealDef.key);
+
+    var thumb = h('div', {
+      class: 'meal-thumb',
+      style: 'background:' + visual.gradient
+    }, [h('span', { class: 'meal-emoji' }, [visual.emoji])]);
+
+    var card = h('div', {
+      class: 'meal-summary-card',
+      onclick: function () {
+        state.activeMealKey = mealDef.key;
+        state.view = 'meal';
+        render();
+      }
+    }, [
+      thumb,
+      h('div', { class: 'meal-summary-info' }, [
+        h('h3', {}, [mealDef.name]),
+        statusChip(mealData),
+        mealData && mealData.acv ? h('span', { class: 'chip chip-acv' }, ['ACV ✓']) : null
+      ]),
+      h('span', { class: 'chevron' }, ['›'])
+    ]);
+
+    return card;
+  }
+
+  // ---------- Meal detail view ----------
+
+  function renderMealDetailView() {
+    var dayRecord = MealLog.getDay(state.date);
+    var plan = MealLog.PLANS[dayRecord.dayType];
+    var mealDef = plan.meals.filter(function (m) { return m.key === state.activeMealKey; })[0];
+
+    if (!mealDef) {
+      state.view = 'day';
+      return renderDayView();
+    }
+
     var existing = dayRecord.meals[mealDef.key] || {};
     var data = {
       time: existing.time || '',
@@ -131,95 +189,82 @@
       MealLog.saveMeal(state.date, mealDef.key, data);
     }
 
-    var logged = isMealLogged(data);
-    var card = h('div', {
-      class: 'meal-card' + (logged ? ' logged' : '') + (data.skipped ? ' skipped' : '')
-    }, []);
+    var visual = getVisual(mealDef.key);
+    var container = h('div', { class: 'view meal-detail-view' }, []);
 
-    var titleChildren = [mealDef.name];
-    if (data.skipped) {
-      titleChildren.push(h('span', { class: 'skip-mark' }, [' ⊘ Skipped']));
-    } else if (logged) {
-      titleChildren.push(h('span', { class: 'check-mark' }, [' ✓']));
-    }
-
-    var headerRight;
-    if (data.skipped) {
-      headerRight = h('button', {
-        class: 'undo-skip-btn',
-        onclick: function () {
-          data.skipped = false;
-          persist();
-          render();
-        }
-      }, ['Undo Skip']);
-    } else {
-      headerRight = h('div', { class: 'time-row' }, [
-        h('input', {
-          type: 'time',
-          class: 'time-input',
-          value: data.time,
-          onchange: function (e) {
-            data.time = e.target.value;
-            persist();
-            refreshCardLoggedState(card, data);
-          }
-        }),
-        h('button', {
-          class: 'now-btn',
-          onclick: function (e) {
-            data.time = currentTimeStr();
-            persist();
-            render();
-          }
-        }, ['Now']),
-        h('button', {
-          class: 'skip-btn',
-          onclick: function () {
-            data.skipped = true;
-            persist();
-            render();
-          }
-        }, ['Skip'])
-      ]);
-    }
-
-    var header = h('div', { class: 'meal-header' }, [
-      h('h3', {}, titleChildren),
-      headerRight
+    var topBar = h('div', { class: 'top-bar' }, [
+      h('button', {
+        class: 'back-btn',
+        onclick: function () { state.view = 'day'; render(); }
+      }, ['‹ Back']),
+      h('span', { class: 'brand' }, [MealLog.friendlyDate(state.date)])
     ]);
-    card.appendChild(header);
+    container.appendChild(topBar);
 
-    if (data.skipped) {
-      card.appendChild(h('div', { class: 'skipped-note' }, ['This meal was marked as skipped.']));
-      return card;
-    }
+    var hero = h('div', {
+      class: 'meal-hero',
+      style: 'background:' + visual.gradient
+    }, [h('span', { class: 'meal-hero-emoji' }, [visual.emoji])]);
+    container.appendChild(hero);
 
-    if (mealDef.type === 'choice') {
-      card.appendChild(renderChoiceBody(mealDef, data, persist));
-    } else {
-      card.appendChild(renderCategoriesBody(mealDef, data, persist));
-    }
+    var body = h('div', { class: 'meal-detail-body' }, []);
+    body.appendChild(h('h2', { class: 'meal-detail-title' }, [mealDef.name]));
 
-    var acvRow = h('label', { class: 'acv-row' }, [
+    var timeRow = h('div', { class: 'time-row' }, [
       h('input', {
-        type: 'checkbox',
-        checked: data.acv ? 'checked' : null,
+        type: 'time',
+        class: 'time-input',
+        value: data.time,
         onchange: function (e) {
-          data.acv = e.target.checked;
+          data.time = e.target.value;
           persist();
         }
       }),
-      h('span', {}, [' Drank apple cider vinegar (5ml in 150ml water)'])
+      h('button', {
+        class: 'now-btn',
+        onclick: function () {
+          data.time = currentTimeStr();
+          persist();
+          render();
+        }
+      }, ['Now']),
+      data.skipped
+        ? h('button', {
+            class: 'undo-skip-btn',
+            onclick: function () { data.skipped = false; persist(); render(); }
+          }, ['Undo Skip'])
+        : h('button', {
+            class: 'skip-btn',
+            onclick: function () { data.skipped = true; persist(); render(); }
+          }, ['Skip'])
     ]);
-    card.appendChild(acvRow);
+    body.appendChild(timeRow);
 
-    return card;
-  }
+    if (data.skipped) {
+      body.appendChild(h('div', { class: 'skipped-note' }, ['This meal was marked as skipped.']));
+    } else {
+      if (mealDef.type === 'choice') {
+        body.appendChild(renderChoiceBody(mealDef, data, persist));
+      } else {
+        body.appendChild(renderCategoriesBody(mealDef, data, persist));
+      }
 
-  function refreshCardLoggedState(card, data) {
-    var logged = isMealLogged(data);
-    card.classList.toggle('logged', logged);
+      var acvRow = h('label', { class: 'acv-row' }, [
+        h('input', {
+          type: 'checkbox',
+          checked: data.acv ? 'checked' : null,
+          onchange: function (e) {
+            data.acv = e.target.checked;
+            persist();
+          }
+        }),
+        h('span', {}, [' Drank apple cider vinegar (5ml in 150ml water)'])
+      ]);
+      body.appendChild(acvRow);
+    }
+
+    container.appendChild(body);
+    return container;
   }
 
   function renderChoiceBody(mealDef, data, persist) {
@@ -319,8 +364,17 @@
 
   // ---------- History view ----------
 
-  function renderHistory() {
-    var container = h('div', { class: 'view' }, []);
+  function renderHistoryView() {
+    var container = h('div', { class: 'view history-view' }, []);
+
+    var topBar = h('div', { class: 'top-bar' }, [
+      h('span', { class: 'brand' }, ['History']),
+      h('button', {
+        class: 'history-link',
+        onclick: function () { state.view = 'day'; render(); }
+      }, ['⌂ Home'])
+    ]);
+    container.appendChild(topBar);
 
     var rangeBar = h('div', { class: 'range-bar' }, [
       h('button', {
