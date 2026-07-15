@@ -17,6 +17,7 @@ MealLog.MEAL_VISUALS = {
 MealLog.PLANS = {
   regular: {
     label: 'Regular Day',
+    shortLabel: 'Regular',
     meals: [
       {
         key: 'breakfast',
@@ -62,6 +63,7 @@ MealLog.PLANS = {
   },
   if: {
     label: 'Intermittent Fasting Day',
+    shortLabel: 'Intermittent',
     meals: [
       {
         key: 'lunch',

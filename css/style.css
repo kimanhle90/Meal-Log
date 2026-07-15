@@ -98,11 +98,11 @@ main#app {
 }
 
 .date-headline.day-type-regular {
-  color: var(--success);
+  color: var(--text);
 }
 
 .date-headline.day-type-if {
-  color: var(--if-color);
+  color: var(--accent);
 }
 
 .page-headline {
@@ -505,6 +505,21 @@ main#app {
   margin-bottom: 10px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.history-card-empty {
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: none;
+}
+
+.history-card-empty .history-date {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.history-card-empty .day-badge {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
 }
 
 .history-summary {

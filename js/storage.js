@@ -36,6 +36,14 @@ MealLog.friendlyDate = function (dateStr) {
   return MealLog.WEEKDAY_NAMES[d.getDay()] + ', ' + MealLog.MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 };
 
+// Compact history-row label: "[weekday initial] - [MM.DD.YY]", e.g. "W - 07.15.26".
+MealLog.historyDateLabel = function (dateStr) {
+  var d = MealLog.parseDate(dateStr);
+  var yy = ('' + d.getFullYear()).slice(-2);
+  return MealLog.WEEKDAY_NAMES[d.getDay()].charAt(0) + ' - ' +
+    MealLog.pad2(d.getMonth() + 1) + '.' + MealLog.pad2(d.getDate()) + '.' + yy;
+};
+
 // Split for display hierarchy: a small eyebrow (weekday) above a big headline (month/day/year).
 MealLog.friendlyDateParts = function (dateStr) {
   var d = MealLog.parseDate(dateStr);

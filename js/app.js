@@ -99,7 +99,7 @@
             }
           })
         ]),
-        h('div', { class: 'date-headline day-type-' + dayRecord.dayType }, [plan.label])
+        h('div', { class: 'date-headline day-type-' + dayRecord.dayType }, [plan.shortLabel])
       ]),
       h('button', {
         class: 'icon-btn',
@@ -431,15 +431,17 @@
       statsChildren.push(h('span', { class: 'stat' }, [skippedCount + ' skipped']));
     }
 
+    var isEmpty = (loggedCount + skippedCount) === 0;
+
     var summary = h('div', { class: 'history-summary' }, [
       h('div', { class: 'history-summary-main' }, [
-        h('span', { class: 'history-date' }, [MealLog.friendlyDate(dateStr)]),
+        h('span', { class: 'history-date' }, [MealLog.historyDateLabel(dateStr)]),
         h('span', { class: 'day-badge small ' + dayType }, [plan.label])
       ]),
       h('div', { class: 'history-summary-stats' }, statsChildren)
     ]);
 
-    var card = h('div', { class: 'history-card' }, [summary, details]);
+    var card = h('div', { class: 'history-card' + (isEmpty ? ' history-card-empty' : '') }, [summary, details]);
     summary.addEventListener('click', function () {
       details.classList.toggle('hidden');
     });
