@@ -57,6 +57,26 @@
     return MealLog.pad2(d.getHours()) + ':' + MealLog.pad2(d.getMinutes());
   }
 
+  // Downscales/compresses an uploaded photo client-side before it's stored,
+  // so it stays well under Firestore's per-document size limit.
+  function resizeImageFile(file, callback) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var maxDim = 1000;
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
   function render() {
     appEl.innerHTML = '';
 
@@ -354,7 +374,8 @@
       otherText: existing.otherText || '',
       categories: existing.categories || {},
       acv: !!existing.acv,
-      skipped: !!existing.skipped
+      skipped: !!existing.skipped,
+      photo: existing.photo || null
     };
 
     function persist() {
@@ -373,10 +394,44 @@
     ]);
     container.appendChild(topBar);
 
-    var hero = h('div', {
-      class: 'meal-hero',
-      style: 'background:' + visual.gradient
-    }, [h('span', { class: 'meal-hero-emoji' }, [visual.emoji])]);
+    var photoInput = h('input', {
+      type: 'file',
+      accept: 'image/*',
+      class: 'photo-input-hidden',
+      onchange: function (e) {
+        var file = e.target.files && e.target.files[0];
+        if (!file) return;
+        resizeImageFile(file, function (dataUrl) {
+          data.photo = dataUrl;
+          persist();
+          render();
+        });
+      }
+    });
+
+    var heroActions = h('div', { class: 'meal-hero-actions' }, [
+      photoInput,
+      h('button', {
+        class: 'hero-action-btn',
+        onclick: function () { photoInput.click(); }
+      }, [data.photo ? 'Change photo' : '📷 Add photo']),
+      data.photo
+        ? h('button', {
+            class: 'hero-action-btn hero-action-remove',
+            onclick: function () { data.photo = null; persist(); render(); }
+          }, ['Remove'])
+        : null
+    ]);
+
+    var hero = data.photo
+      ? h('div', { class: 'meal-hero' }, [
+          h('div', { class: 'meal-hero-photo', style: 'background-image:url(' + data.photo + ')' }, []),
+          heroActions
+        ])
+      : h('div', {
+          class: 'meal-hero',
+          style: 'background:' + visual.gradient
+        }, [h('span', { class: 'meal-hero-emoji' }, [visual.emoji]), heroActions]);
     container.appendChild(hero);
 
     var body = h('div', { class: 'meal-detail-body' }, []);
