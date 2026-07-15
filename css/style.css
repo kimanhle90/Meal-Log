@@ -649,6 +649,19 @@ main#app {
   color: var(--muted);
 }
 
+.submit-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px 24px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* ---------- History view ---------- */
 
 .range-bar {

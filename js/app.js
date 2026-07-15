@@ -488,6 +488,15 @@
         h('span', {}, [' Drank apple cider vinegar (5ml in 150ml water)'])
       ]);
       body.appendChild(acvRow);
+
+      body.appendChild(h('button', {
+        class: 'submit-btn',
+        type: 'button',
+        onclick: function () {
+          persist();
+          render();
+        }
+      }, ['Save']));
     }
 
     var card = h('div', { class: 'meal-card' }, [hero, body]);
@@ -537,7 +546,6 @@
         value: data.otherText,
         oninput: function (e) {
           data.otherText = e.target.value;
-          debounceSave(mealDef.key, persist);
         }
       }));
     }
@@ -565,7 +573,6 @@
             value: entry.food,
             oninput: function (e) {
               entry.food = e.target.value;
-              debounceSave(mealDef.key + '-' + cat.id + '-food', persist);
             }
           }),
           h('div', { class: 'grams-input-wrap' }, [
@@ -579,7 +586,6 @@
               value: entry.grams,
               oninput: function (e) {
                 entry.grams = e.target.value;
-                debounceSave(mealDef.key + '-' + cat.id + '-grams', persist);
               }
             }),
             h('span', { class: 'unit-label' }, ['g'])
