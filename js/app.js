@@ -111,7 +111,7 @@
 
     if (state.date !== MealLog.today()) {
       container.appendChild(h('button', {
-        class: 'link-btn',
+        class: 'history-link jump-today-btn',
         onclick: function () { state.date = MealLog.today(); render(); }
       }, ['Jump to today']));
     }
