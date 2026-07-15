@@ -36,8 +36,12 @@
   }
 
   function isMealLogged(mealData) {
-    if (!mealData) return false;
+    if (!mealData || mealData.skipped) return false;
     return !!(mealData.time && mealData.time.length);
+  }
+
+  function isMealSkipped(mealData) {
+    return !!(mealData && mealData.skipped);
   }
 
   function render() {
@@ -83,7 +87,8 @@
           }
         }),
         h('div', { class: 'friendly-date' }, [MealLog.friendlyDate(state.date)]),
-        h('span', { class: 'day-badge ' + dayRecord.dayType }, [plan.label])
+        h('span', { class: 'day-badge ' + dayRecord.dayType }, [plan.label]),
+        h('span', { class: 'week-badge' }, ['Week ' + MealLog.getWeekNumber(state.date)])
       ]),
       h('button', {
         class: 'icon-btn',
@@ -118,7 +123,8 @@
       selected: existing.selected || '',
       otherText: existing.otherText || '',
       categories: existing.categories || {},
-      acv: !!existing.acv
+      acv: !!existing.acv,
+      skipped: !!existing.skipped
     };
 
     function persist() {
@@ -126,11 +132,29 @@
     }
 
     var logged = isMealLogged(data);
-    var card = h('div', { class: 'meal-card' + (logged ? ' logged' : '') }, []);
+    var card = h('div', {
+      class: 'meal-card' + (logged ? ' logged' : '') + (data.skipped ? ' skipped' : '')
+    }, []);
 
-    var header = h('div', { class: 'meal-header' }, [
-      h('h3', {}, [mealDef.name, logged ? h('span', { class: 'check-mark' }, [' ✓']) : null]),
-      h('div', { class: 'time-row' }, [
+    var titleChildren = [mealDef.name];
+    if (data.skipped) {
+      titleChildren.push(h('span', { class: 'skip-mark' }, [' ⊘ Skipped']));
+    } else if (logged) {
+      titleChildren.push(h('span', { class: 'check-mark' }, [' ✓']));
+    }
+
+    var headerRight;
+    if (data.skipped) {
+      headerRight = h('button', {
+        class: 'undo-skip-btn',
+        onclick: function () {
+          data.skipped = false;
+          persist();
+          render();
+        }
+      }, ['Undo Skip']);
+    } else {
+      headerRight = h('div', { class: 'time-row' }, [
         h('input', {
           type: 'time',
           class: 'time-input',
@@ -148,10 +172,28 @@
             persist();
             render();
           }
-        }, ['Now'])
-      ])
+        }, ['Now']),
+        h('button', {
+          class: 'skip-btn',
+          onclick: function () {
+            data.skipped = true;
+            persist();
+            render();
+          }
+        }, ['Skip'])
+      ]);
+    }
+
+    var header = h('div', { class: 'meal-header' }, [
+      h('h3', {}, titleChildren),
+      headerRight
     ]);
     card.appendChild(header);
+
+    if (data.skipped) {
+      card.appendChild(h('div', { class: 'skipped-note' }, ['This meal was marked as skipped.']));
+      return card;
+    }
 
     if (mealDef.type === 'choice') {
       card.appendChild(renderChoiceBody(mealDef, data, persist));
@@ -234,18 +276,42 @@
     var wrap = h('div', { class: 'categories-body' }, []);
     mealDef.categories.forEach(function (cat) {
       var targetLabel = cat.target ? (cat.label + ' — target ' + cat.target) : cat.label;
+      var entry = data.categories[cat.id];
+      if (!entry || typeof entry !== 'object') {
+        entry = { food: '', grams: '' };
+        data.categories[cat.id] = entry;
+      }
+
       wrap.appendChild(h('div', { class: 'category-row' }, [
         h('label', { class: 'category-label' }, [targetLabel]),
-        h('input', {
-          type: 'text',
-          class: 'text-input',
-          placeholder: 'What & how much did you actually eat?',
-          value: data.categories[cat.id] || '',
-          oninput: function (e) {
-            data.categories[cat.id] = e.target.value;
-            debounceSave(mealDef.key + '-' + cat.id, persist);
-          }
-        })
+        h('div', { class: 'category-inputs' }, [
+          h('input', {
+            type: 'text',
+            class: 'text-input food-input',
+            placeholder: 'What did you eat?',
+            value: entry.food,
+            oninput: function (e) {
+              entry.food = e.target.value;
+              debounceSave(mealDef.key + '-' + cat.id + '-food', persist);
+            }
+          }),
+          h('div', { class: 'grams-input-wrap' }, [
+            h('input', {
+              type: 'number',
+              min: '0',
+              step: '1',
+              inputmode: 'numeric',
+              class: 'text-input grams-input',
+              placeholder: 'Amount',
+              value: entry.grams,
+              oninput: function (e) {
+                entry.grams = e.target.value;
+                debounceSave(mealDef.key + '-' + cat.id + '-grams', persist);
+              }
+            }),
+            h('span', { class: 'unit-label' }, ['g'])
+          ])
+        ])
       ]));
     });
     return wrap;
@@ -285,10 +351,12 @@
     var meals = dayRecord ? dayRecord.meals : {};
 
     var loggedCount = 0;
+    var skippedCount = 0;
     var acvCount = 0;
     plan.meals.forEach(function (m) {
       var md = meals[m.key];
       if (isMealLogged(md)) loggedCount++;
+      if (isMealSkipped(md)) skippedCount++;
       if (md && md.acv) acvCount++;
     });
 
@@ -297,15 +365,21 @@
       details.appendChild(renderHistoryMeal(mealDef, meals[mealDef.key]));
     });
 
+    var statsChildren = [
+      h('span', { class: 'stat' }, [loggedCount + '/' + plan.meals.length + ' meals']),
+      h('span', { class: 'stat' }, [acvCount + '/' + plan.meals.length + ' ACV'])
+    ];
+    if (skippedCount > 0) {
+      statsChildren.push(h('span', { class: 'stat' }, [skippedCount + ' skipped']));
+    }
+
     var summary = h('div', { class: 'history-summary' }, [
       h('div', { class: 'history-summary-main' }, [
         h('span', { class: 'history-date' }, [MealLog.friendlyDate(dateStr)]),
-        h('span', { class: 'day-badge small ' + dayType }, [plan.label])
+        h('span', { class: 'day-badge small ' + dayType }, [plan.label]),
+        h('span', { class: 'week-badge small' }, ['Week ' + MealLog.getWeekNumber(dateStr)])
       ]),
-      h('div', { class: 'history-summary-stats' }, [
-        h('span', { class: 'stat' }, [loggedCount + '/' + plan.meals.length + ' meals']),
-        h('span', { class: 'stat' }, [acvCount + '/' + plan.meals.length + ' ACV'])
-      ])
+      h('div', { class: 'history-summary-stats' }, statsChildren)
     ]);
 
     var card = h('div', { class: 'history-card' }, [summary, details]);
@@ -317,6 +391,15 @@
 
   function renderHistoryMeal(mealDef, mealData) {
     var rows = [];
+
+    if (isMealSkipped(mealData)) {
+      rows.push(h('div', { class: 'hm-header' }, [
+        h('strong', {}, [mealDef.name]),
+        h('span', { class: 'hm-skipped' }, ['Skipped'])
+      ]));
+      return h('div', { class: 'hm-block' }, rows);
+    }
+
     rows.push(h('div', { class: 'hm-header' }, [
       h('strong', {}, [mealDef.name]),
       h('span', { class: 'hm-time' }, [mealData && mealData.time ? mealData.time : 'not logged']),
@@ -336,8 +419,15 @@
       rows.push(h('div', { class: 'hm-line' }, [text]));
     } else {
       mealDef.categories.forEach(function (cat) {
-        var val = mealData && mealData.categories ? mealData.categories[cat.id] : '';
-        rows.push(h('div', { class: 'hm-line' }, [cat.label + ': ' + (val || '—')]));
+        var entry = mealData && mealData.categories ? mealData.categories[cat.id] : null;
+        var text = '—';
+        if (entry && typeof entry === 'object' && (entry.food || entry.grams)) {
+          var parts = [];
+          if (entry.food) parts.push(entry.food);
+          if (entry.grams) parts.push(entry.grams + 'g');
+          text = parts.join(', ');
+        }
+        rows.push(h('div', { class: 'hm-line' }, [cat.label + ': ' + text]));
       });
     }
 
