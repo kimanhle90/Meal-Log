@@ -6,8 +6,12 @@
 // saveWeight, getRange) or anything in app.js.
 //
 // Adapter contract:
-//   readAll()      -> synchronously returns the full data object, keyed by
-//                      date string ("YYYY-MM-DD") -> day record.
+//   readAll()      -> synchronously returns a fresh copy of the full data
+//                      object, keyed by date string ("YYYY-MM-DD") -> day
+//                      record. Callers mutate this copy in place and pass
+//                      it back to writeAll(), so it must NOT be a live
+//                      reference to any internal cache the adapter keeps —
+//                      otherwise the adapter can't tell what changed.
 //   writeAll(data) -> persists the full data object.
 // A remote-backed adapter is expected to keep an in-memory mirror of the
 // data (kept current via a realtime listener) so readAll() can stay

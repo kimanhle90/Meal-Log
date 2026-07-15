@@ -76,7 +76,11 @@
   }
 
   FirestoreStore.prototype.readAll = function () {
-    return cache;
+    // Must be a fresh copy, not the live cache: callers (storage.js) mutate
+    // the returned object in place and hand it back to writeAll(), which
+    // needs to diff it against the still-unmutated cache to know what
+    // actually changed.
+    return JSON.parse(JSON.stringify(cache));
   };
 
   FirestoreStore.prototype.writeAll = function (data) {
