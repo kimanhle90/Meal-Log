@@ -159,30 +159,35 @@
     if (isMealLogged(mealData)) {
       return h('span', { class: 'chip chip-logged' }, ['✓ ' + mealData.time]);
     }
-    return h('span', { class: 'chip chip-pending' }, ['Tap to log']);
+    return null;
   }
 
-  // One-line summary of what was actually logged, shown on the day-view card.
-  function mealSummaryText(mealDef, mealData) {
-    if (!mealData || isMealSkipped(mealData)) return '';
+  // Lines of what was actually logged, shown on the day-view card (one item per line).
+  function mealSummaryLines(mealDef, mealData) {
+    if (!mealData || isMealSkipped(mealData)) return [];
 
     if (mealDef.type === 'choice') {
-      if (mealData.selected === 'other') return mealData.otherText || '';
-      var opt = mealDef.options.filter(function (o) { return o.id === mealData.selected; })[0];
-      return opt ? opt.label : '';
+      var text;
+      if (mealData.selected === 'other') {
+        text = mealData.otherText || '';
+      } else {
+        var opt = mealDef.options.filter(function (o) { return o.id === mealData.selected; })[0];
+        text = opt ? opt.label : '';
+      }
+      return text ? [text] : [];
     }
 
-    var parts = [];
+    var lines = [];
     mealDef.categories.forEach(function (cat) {
       var entry = mealData.categories && mealData.categories[cat.id];
       if (entry && typeof entry === 'object' && (entry.food || entry.grams)) {
         var bits = [];
         if (entry.food) bits.push(entry.food);
         if (entry.grams) bits.push(entry.grams + 'g');
-        parts.push(bits.join(' '));
+        lines.push(bits.join(' '));
       }
     });
-    return parts.join(', ');
+    return lines;
   }
 
   function renderMealSummaryCard(mealDef, dayRecord) {
@@ -194,18 +199,17 @@
       style: 'background-image:url(' + photoUrl + ')'
     }, []);
 
-    var summaryText = mealSummaryText(mealDef, mealData);
+    var summaryLines = mealSummaryLines(mealDef, mealData);
+    var chip = statusChip(mealData);
+    var acvChip = mealData && mealData.acv ? h('span', { class: 'chip chip-acv' }, ['ACV ✓']) : null;
 
-    var infoChildren = [
-      h('h3', {}, [mealDef.name]),
-      h('div', { class: 'meal-chip-row' }, [
-        statusChip(mealData),
-        mealData && mealData.acv ? h('span', { class: 'chip chip-acv' }, ['ACV ✓']) : null
-      ])
-    ];
-    if (summaryText) {
-      infoChildren.push(h('div', { class: 'meal-summary-note' }, [summaryText]));
+    var infoChildren = [h('h3', {}, [mealDef.name])];
+    if (chip || acvChip) {
+      infoChildren.push(h('div', { class: 'meal-chip-row' }, [chip, acvChip]));
     }
+    summaryLines.forEach(function (line) {
+      infoChildren.push(h('div', { class: 'meal-summary-note' }, [line]));
+    });
 
     var content = h('div', { class: 'meal-card-content' }, [
       h('div', { class: 'meal-summary-info' }, infoChildren),
