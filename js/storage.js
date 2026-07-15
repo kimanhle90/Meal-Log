@@ -1,8 +1,55 @@
-// Date helpers and localStorage-backed persistence for meal logs.
+// Date helpers and persistence for meal logs.
+//
+// Persistence goes through a pluggable "store" adapter (MealLog.store) so a
+// future backend (e.g. Firestore) can be swapped in via MealLog.setStore()
+// without touching this file's higher-level functions (getDay, saveMeal,
+// saveWeight, getRange) or anything in app.js.
+//
+// Adapter contract:
+//   readAll()      -> synchronously returns the full data object, keyed by
+//                      date string ("YYYY-MM-DD") -> day record.
+//   writeAll(data) -> persists the full data object.
+// A remote-backed adapter is expected to keep an in-memory mirror of the
+// data (kept current via a realtime listener) so readAll() can stay
+// synchronous, and to push writeAll()'s changes to the backend in the
+// background.
 
 var MealLog = window.MealLog || {};
 
 MealLog.STORAGE_KEY = 'mealLog:days:v1';
+
+function LocalStorageStore(key) {
+  this.key = key;
+}
+
+LocalStorageStore.prototype.readAll = function () {
+  try {
+    var raw = localStorage.getItem(this.key);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    console.error('Failed to read meal log storage', e);
+    return {};
+  }
+};
+
+LocalStorageStore.prototype.writeAll = function (data) {
+  try {
+    localStorage.setItem(this.key, JSON.stringify(data));
+  } catch (e) {
+    console.error('Failed to write meal log storage', e);
+  }
+};
+
+MealLog.LocalStorageStore = LocalStorageStore;
+
+// Swaps the active store adapter. Call this (e.g. from a firebase.js loaded
+// after this file but before app.js) to move persistence to a different
+// backend without changing any other code.
+MealLog.setStore = function (store) {
+  MealLog.store = store;
+};
+
+MealLog.setStore(new LocalStorageStore(MealLog.STORAGE_KEY));
 
 MealLog.pad2 = function (n) {
   return n < 10 ? '0' + n : '' + n;
@@ -54,51 +101,33 @@ MealLog.friendlyDateParts = function (dateStr) {
   };
 };
 
-MealLog._readAll = function () {
-  try {
-    var raw = localStorage.getItem(MealLog.STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (e) {
-    console.error('Failed to read meal log storage', e);
-    return {};
-  }
-};
-
-MealLog._writeAll = function (data) {
-  try {
-    localStorage.setItem(MealLog.STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error('Failed to write meal log storage', e);
-  }
-};
-
 // Returns the stored day record, or a fresh empty one (not yet persisted).
 MealLog.getDay = function (dateStr) {
-  var all = MealLog._readAll();
+  var all = MealLog.store.readAll();
   return all[dateStr] || { dayType: MealLog.getDayType(dateStr), meals: {} };
 };
 
 MealLog.saveMeal = function (dateStr, mealKey, mealData) {
-  var all = MealLog._readAll();
+  var all = MealLog.store.readAll();
   if (!all[dateStr]) {
     all[dateStr] = { dayType: MealLog.getDayType(dateStr), meals: {} };
   }
   all[dateStr].meals[mealKey] = mealData;
-  MealLog._writeAll(all);
+  MealLog.store.writeAll(all);
 };
 
 MealLog.saveWeight = function (dateStr, weightValue) {
-  var all = MealLog._readAll();
+  var all = MealLog.store.readAll();
   if (!all[dateStr]) {
     all[dateStr] = { dayType: MealLog.getDayType(dateStr), meals: {} };
   }
   all[dateStr].weight = weightValue;
-  MealLog._writeAll(all);
+  MealLog.store.writeAll(all);
 };
 
 // Returns array of { date, dayRecord } for the given number of days ending today (inclusive), most recent first.
 MealLog.getRange = function (days) {
-  var all = MealLog._readAll();
+  var all = MealLog.store.readAll();
   var result = [];
   var d = MealLog.today();
   for (var i = 0; i < days; i++) {
