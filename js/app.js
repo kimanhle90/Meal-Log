@@ -81,6 +81,7 @@
     ]);
     container.appendChild(topBar);
 
+    var dateParts = MealLog.friendlyDateParts(state.date);
     var dateBar = h('div', { class: 'date-bar' }, [
       h('button', {
         class: 'icon-btn',
@@ -95,7 +96,8 @@
             if (e.target.value) { state.date = e.target.value; render(); }
           }
         }),
-        h('div', { class: 'friendly-date' }, [MealLog.friendlyDate(state.date)]),
+        h('div', { class: 'date-eyebrow' }, [dateParts.weekday]),
+        h('div', { class: 'date-headline' }, [dateParts.headline]),
         h('div', { class: 'badge-row' }, [
           h('span', { class: 'day-badge ' + dayRecord.dayType }, [plan.label]),
           h('span', { class: 'week-badge' }, ['Week ' + MealLog.getWeekNumber(state.date)])
@@ -208,6 +210,7 @@
     container.appendChild(hero);
 
     var body = h('div', { class: 'meal-detail-body' }, []);
+    body.appendChild(h('div', { class: 'detail-eyebrow' }, [plan.label]));
     body.appendChild(h('h2', { class: 'meal-detail-title' }, [mealDef.name]));
 
     var timeRow = h('div', { class: 'time-row' }, [
@@ -368,13 +371,16 @@
     var container = h('div', { class: 'view history-view' }, []);
 
     var topBar = h('div', { class: 'top-bar' }, [
-      h('span', { class: 'brand' }, ['History']),
+      h('span', { class: 'brand' }, ['Meal Log']),
       h('button', {
         class: 'history-link',
         onclick: function () { state.view = 'day'; render(); }
       }, ['⌂ Home'])
     ]);
     container.appendChild(topBar);
+
+    container.appendChild(h('div', { class: 'detail-eyebrow' }, ['Your progress']));
+    container.appendChild(h('h1', { class: 'page-headline' }, ['History']));
 
     var rangeBar = h('div', { class: 'range-bar' }, [
       h('button', {
