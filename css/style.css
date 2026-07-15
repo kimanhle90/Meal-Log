@@ -14,8 +14,8 @@
   --danger: #ff7b7b;
   --if-color: #ffb37a;
   --if-bg: rgba(255, 179, 122, 0.16);
-  --radius: 22px;
-  --radius-sm: 14px;
+  --radius: 14px;
+  --radius-sm: 10px;
 }
 
 * { box-sizing: border-box; }
@@ -46,7 +46,7 @@ main#app {
 
 .glass, .meal-summary-card, .meal-detail-body, .history-card,
 .icon-btn, .history-link, .back-btn, .now-btn, .undo-skip-btn,
-.range-btn, .text-input, .time-input {
+.range-btn, .text-input, .time-input, .weight-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -206,6 +206,59 @@ main#app {
 .day-badge.small {
   font-size: 0.66rem;
   padding: 3px 10px;
+}
+
+/* ---------- Day view: weight card ---------- */
+
+.weight-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  margin-top: 18px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.weight-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.weight-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weight-input {
+  width: 56px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 300;
+  text-align: right;
+  padding: 4px 0;
+  -moz-appearance: textfield;
+}
+
+.weight-input::-webkit-outer-spin-button,
+.weight-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.weight-input::placeholder {
+  color: var(--muted);
+}
+
+.weight-input-wrap .unit-label {
+  position: static;
+  transform: none;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
 /* ---------- Day view: meal summary cards ---------- */

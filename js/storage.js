@@ -87,6 +87,15 @@ MealLog.saveMeal = function (dateStr, mealKey, mealData) {
   MealLog._writeAll(all);
 };
 
+MealLog.saveWeight = function (dateStr, weightValue) {
+  var all = MealLog._readAll();
+  if (!all[dateStr]) {
+    all[dateStr] = { dayType: MealLog.getDayType(dateStr), meals: {} };
+  }
+  all[dateStr].weight = weightValue;
+  MealLog._writeAll(all);
+};
+
 // Returns array of { date, dayRecord } for the given number of days ending today (inclusive), most recent first.
 MealLog.getRange = function (days) {
   var all = MealLog._readAll();

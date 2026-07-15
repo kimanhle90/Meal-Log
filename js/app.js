@@ -116,6 +116,8 @@
       }, ['Jump to today']));
     }
 
+    container.appendChild(renderWeightCard(dayRecord));
+
     var list = h('div', { class: 'meal-list' }, []);
     plan.meals.forEach(function (mealDef) {
       list.appendChild(renderMealSummaryCard(mealDef, dayRecord));
@@ -123,6 +125,31 @@
     container.appendChild(list);
 
     return container;
+  }
+
+  function renderWeightCard(dayRecord) {
+    var card = h('div', { class: 'weight-card' }, [
+      h('span', { class: 'weight-label' }, ['Weight']),
+      h('div', { class: 'weight-input-wrap' }, [
+        h('input', {
+          type: 'number',
+          min: '0',
+          step: '0.1',
+          inputmode: 'decimal',
+          class: 'weight-input',
+          placeholder: '—',
+          value: dayRecord.weight || '',
+          oninput: function (e) {
+            var v = e.target.value;
+            debounceSave('weight', function () {
+              MealLog.saveWeight(state.date, v);
+            });
+          }
+        }),
+        h('span', { class: 'unit-label' }, ['lb'])
+      ])
+    ]);
+    return card;
   }
 
   function statusChip(mealData) {
