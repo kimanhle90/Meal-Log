@@ -80,7 +80,7 @@ main#app {
 
 /* ---------- Typography: thin big headlines vs. bold small labels ---------- */
 
-.date-eyebrow, .detail-eyebrow {
+.detail-eyebrow {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -91,10 +91,18 @@ main#app {
 
 .date-headline {
   font-weight: 200;
-  font-size: 2.6rem;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 10px;
+  font-size: clamp(1.7rem, 7.5vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.date-headline.day-type-regular {
+  color: var(--success);
+}
+
+.date-headline.day-type-if {
+  color: var(--if-color);
 }
 
 .page-headline {
@@ -125,19 +133,32 @@ main#app {
   text-align: center;
 }
 
+.date-subline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* Native date input rendered as an icon-only affordance so it doesn't
+   repeat the date text already shown in .date-subline. */
 .date-input {
   border: none;
   background: transparent;
-  color: var(--muted);
-  font-size: 0.8rem;
-  opacity: 0.8;
+  color: transparent;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  opacity: 0.7;
 }
 
-.badge-row {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 4px;
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
+  cursor: pointer;
 }
 
 .icon-btn {
@@ -162,7 +183,7 @@ main#app {
   font-size: 0.9rem;
 }
 
-.day-badge, .week-badge {
+.day-badge {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 999px;
@@ -181,13 +202,7 @@ main#app {
   color: var(--if-color);
 }
 
-.week-badge {
-  background: var(--glass-bg-strong);
-  color: var(--muted);
-  border: 1px solid var(--glass-border);
-}
-
-.day-badge.small, .week-badge.small {
+.day-badge.small {
   font-size: 0.66rem;
   padding: 3px 10px;
 }

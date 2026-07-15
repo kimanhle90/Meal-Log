@@ -88,20 +88,18 @@
         onclick: function () { state.date = MealLog.addDays(state.date, -1); render(); }
       }, ['‹']),
       h('div', { class: 'date-info' }, [
-        h('input', {
-          type: 'date',
-          class: 'date-input',
-          value: state.date,
-          onchange: function (e) {
-            if (e.target.value) { state.date = e.target.value; render(); }
-          }
-        }),
-        h('div', { class: 'date-eyebrow' }, [dateParts.weekday]),
-        h('div', { class: 'date-headline' }, [dateParts.headline]),
-        h('div', { class: 'badge-row' }, [
-          h('span', { class: 'day-badge ' + dayRecord.dayType }, [plan.label]),
-          h('span', { class: 'week-badge' }, ['Week ' + MealLog.getWeekNumber(state.date)])
-        ])
+        h('div', { class: 'date-subline' }, [
+          dateParts.weekday + ', ' + dateParts.headline,
+          h('input', {
+            type: 'date',
+            class: 'date-input',
+            value: state.date,
+            onchange: function (e) {
+              if (e.target.value) { state.date = e.target.value; render(); }
+            }
+          })
+        ]),
+        h('div', { class: 'date-headline day-type-' + dayRecord.dayType }, [plan.label])
       ]),
       h('button', {
         class: 'icon-btn',
@@ -436,8 +434,7 @@
     var summary = h('div', { class: 'history-summary' }, [
       h('div', { class: 'history-summary-main' }, [
         h('span', { class: 'history-date' }, [MealLog.friendlyDate(dateStr)]),
-        h('span', { class: 'day-badge small ' + dayType }, [plan.label]),
-        h('span', { class: 'week-badge small' }, ['Week ' + MealLog.getWeekNumber(dateStr)])
+        h('span', { class: 'day-badge small ' + dayType }, [plan.label])
       ]),
       h('div', { class: 'history-summary-stats' }, statsChildren)
     ]);
