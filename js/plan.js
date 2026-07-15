@@ -1,0 +1,104 @@
+// Meal plan definition, hardcoded from the PT's Week 1 plan.
+// Day types: "regular" (Mon/Wed/Fri/Sat/Sun) and "if" (Tue/Thu, intermittent fasting).
+
+var MealLog = window.MealLog || {};
+
+MealLog.ACV_NOTE = 'Apple cider vinegar: 5ml mixed in 150ml water';
+
+MealLog.PLANS = {
+  regular: {
+    label: 'Regular Day',
+    meals: [
+      {
+        key: 'breakfast',
+        name: 'Breakfast',
+        type: 'choice',
+        options: [
+          { id: 'eggs', label: '2 Eggs' },
+          { id: 'whey', label: '1 cup whey' },
+          { id: 'egg_yogurt', label: '1 egg & 100g greek yogurt' }
+        ]
+      },
+      {
+        key: 'lunch',
+        name: 'Lunch',
+        type: 'categories',
+        categories: [
+          { id: 'protein', label: 'Protein', target: '200g' },
+          { id: 'veggie', label: 'Vegetables', target: '150g' },
+          { id: 'fruit', label: 'Fruit', target: '' }
+        ]
+      },
+      {
+        key: 'dinner',
+        name: 'Dinner',
+        type: 'categories',
+        categories: [
+          { id: 'carb', label: 'Carb', target: '150g' },
+          { id: 'protein', label: 'Protein', target: '150g' },
+          { id: 'veggie', label: 'Veggie', target: '150g' },
+          { id: 'fruit', label: 'Fruit', target: '' }
+        ]
+      },
+      {
+        key: 'lateSnack',
+        name: 'Late Snack',
+        type: 'choice',
+        options: [
+          { id: 'yogurt', label: 'Yogurt 100g' },
+          { id: 'fruit', label: 'Fruit 100g' }
+        ]
+      }
+    ]
+  },
+  if: {
+    label: 'Intermittent Fasting Day',
+    meals: [
+      {
+        key: 'lunch',
+        name: 'Lunch',
+        type: 'categories',
+        categories: [
+          { id: 'protein', label: 'Protein', target: '150g' },
+          { id: 'veggie', label: 'Veggie', target: '150g' },
+          { id: 'fruit', label: 'Fruit', target: '' }
+        ]
+      },
+      {
+        key: 'snack',
+        name: 'Snack',
+        type: 'choice',
+        options: [
+          { id: 'yogurt', label: 'Yogurt 100g' },
+          { id: 'fruit', label: 'Fruit 100g' }
+        ]
+      },
+      {
+        key: 'dinner',
+        name: 'Dinner',
+        type: 'categories',
+        categories: [
+          { id: 'carb', label: 'Carb', target: '150g' },
+          { id: 'protein', label: 'Protein', target: '150g' },
+          { id: 'veggie', label: 'Veggie', target: '150g' },
+          { id: 'fruit', label: 'Fruit', target: '' }
+        ]
+      }
+    ]
+  }
+};
+
+// JS Date#getDay(): 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+MealLog.IF_WEEKDAYS = [2, 4];
+
+MealLog.getDayType = function (dateStr) {
+  var d = MealLog.parseDate(dateStr);
+  var day = d.getDay();
+  return MealLog.IF_WEEKDAYS.indexOf(day) !== -1 ? 'if' : 'regular';
+};
+
+MealLog.getPlanForDate = function (dateStr) {
+  return MealLog.PLANS[MealLog.getDayType(dateStr)];
+};
+
+window.MealLog = MealLog;
