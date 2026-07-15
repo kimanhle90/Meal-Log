@@ -14,8 +14,8 @@
   --danger: #ff7b7b;
   --if-color: #ffb37a;
   --if-bg: rgba(255, 179, 122, 0.16);
-  --radius: 22px;
-  --radius-sm: 14px;
+  --radius: 14px;
+  --radius-sm: 10px;
 }
 
 * { box-sizing: border-box; }
@@ -46,7 +46,7 @@ main#app {
 
 .glass, .meal-summary-card, .meal-detail-body, .history-card,
 .icon-btn, .history-link, .back-btn, .now-btn, .undo-skip-btn,
-.range-btn, .text-input, .time-input {
+.range-btn, .text-input, .time-input, .weight-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -80,7 +80,7 @@ main#app {
 
 /* ---------- Typography: thin big headlines vs. bold small labels ---------- */
 
-.date-eyebrow, .detail-eyebrow {
+.detail-eyebrow {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -91,10 +91,25 @@ main#app {
 
 .date-headline {
   font-weight: 200;
-  font-size: 2.6rem;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 10px;
+  font-size: clamp(1.7rem, 7.5vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.date-headline.day-type-regular {
+  color: var(--text);
+}
+
+.date-headline.day-type-if {
+  color: var(--accent);
+}
+
+.first-meal-hint {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text);
+  margin-top: 2px;
 }
 
 .page-headline {
@@ -125,19 +140,32 @@ main#app {
   text-align: center;
 }
 
+.date-subline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* Native date input rendered as an icon-only affordance so it doesn't
+   repeat the date text already shown in .date-subline. */
 .date-input {
   border: none;
   background: transparent;
-  color: var(--muted);
-  font-size: 0.8rem;
-  opacity: 0.8;
+  color: transparent;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  opacity: 0.7;
 }
 
-.badge-row {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 4px;
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
+  cursor: pointer;
 }
 
 .icon-btn {
@@ -151,18 +179,12 @@ main#app {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-.link-btn {
+.jump-today-btn {
   display: block;
-  margin: 4px auto 12px;
-  background: none;
-  border: none;
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 0.9rem;
+  margin: 8px auto 16px;
 }
 
-.day-badge, .week-badge {
+.day-badge {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 999px;
@@ -181,15 +203,62 @@ main#app {
   color: var(--if-color);
 }
 
-.week-badge {
-  background: var(--glass-bg-strong);
-  color: var(--muted);
-  border: 1px solid var(--glass-border);
-}
-
-.day-badge.small, .week-badge.small {
+.day-badge.small {
   font-size: 0.66rem;
   padding: 3px 10px;
+}
+
+/* ---------- Day view: weight card ---------- */
+
+.weight-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  margin-top: 18px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.weight-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.weight-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weight-input {
+  width: 56px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 300;
+  text-align: right;
+  padding: 4px 0;
+  -moz-appearance: textfield;
+}
+
+.weight-input::-webkit-outer-spin-button,
+.weight-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.weight-input::placeholder {
+  color: var(--muted);
+}
+
+.weight-input-wrap .unit-label {
+  position: static;
+  transform: none;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
 /* ---------- Day view: meal summary cards ---------- */
@@ -490,6 +559,21 @@ main#app {
   margin-bottom: 10px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.history-card-empty {
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: none;
+}
+
+.history-card-empty .history-date {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.history-card-empty .day-badge {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
 }
 
 .history-summary {

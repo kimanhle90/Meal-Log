@@ -88,20 +88,19 @@
         onclick: function () { state.date = MealLog.addDays(state.date, -1); render(); }
       }, ['‹']),
       h('div', { class: 'date-info' }, [
-        h('input', {
-          type: 'date',
-          class: 'date-input',
-          value: state.date,
-          onchange: function (e) {
-            if (e.target.value) { state.date = e.target.value; render(); }
-          }
-        }),
-        h('div', { class: 'date-eyebrow' }, [dateParts.weekday]),
-        h('div', { class: 'date-headline' }, [dateParts.headline]),
-        h('div', { class: 'badge-row' }, [
-          h('span', { class: 'day-badge ' + dayRecord.dayType }, [plan.label]),
-          h('span', { class: 'week-badge' }, ['Week ' + MealLog.getWeekNumber(state.date)])
-        ])
+        h('div', { class: 'date-subline' }, [
+          dateParts.weekday + ', ' + dateParts.headline,
+          h('input', {
+            type: 'date',
+            class: 'date-input',
+            value: state.date,
+            onchange: function (e) {
+              if (e.target.value) { state.date = e.target.value; render(); }
+            }
+          })
+        ]),
+        h('div', { class: 'date-headline day-type-' + dayRecord.dayType }, [plan.shortLabel]),
+        plan.firstMealHint ? h('div', { class: 'first-meal-hint' }, [plan.firstMealHint]) : null
       ]),
       h('button', {
         class: 'icon-btn',
@@ -112,10 +111,12 @@
 
     if (state.date !== MealLog.today()) {
       container.appendChild(h('button', {
-        class: 'link-btn',
+        class: 'history-link jump-today-btn',
         onclick: function () { state.date = MealLog.today(); render(); }
       }, ['Jump to today']));
     }
+
+    container.appendChild(renderWeightCard(dayRecord));
 
     var list = h('div', { class: 'meal-list' }, []);
     plan.meals.forEach(function (mealDef) {
@@ -124,6 +125,31 @@
     container.appendChild(list);
 
     return container;
+  }
+
+  function renderWeightCard(dayRecord) {
+    var card = h('div', { class: 'weight-card' }, [
+      h('span', { class: 'weight-label' }, ['Weight']),
+      h('div', { class: 'weight-input-wrap' }, [
+        h('input', {
+          type: 'number',
+          min: '0',
+          step: '0.1',
+          inputmode: 'decimal',
+          class: 'weight-input',
+          placeholder: '—',
+          value: dayRecord.weight || '',
+          oninput: function (e) {
+            var v = e.target.value;
+            debounceSave('weight', function () {
+              MealLog.saveWeight(state.date, v);
+            });
+          }
+        }),
+        h('span', { class: 'unit-label' }, ['lb'])
+      ])
+    ]);
+    return card;
   }
 
   function statusChip(mealData) {
@@ -433,16 +459,17 @@
       statsChildren.push(h('span', { class: 'stat' }, [skippedCount + ' skipped']));
     }
 
+    var isEmpty = (loggedCount + skippedCount) === 0;
+
     var summary = h('div', { class: 'history-summary' }, [
       h('div', { class: 'history-summary-main' }, [
-        h('span', { class: 'history-date' }, [MealLog.friendlyDate(dateStr)]),
-        h('span', { class: 'day-badge small ' + dayType }, [plan.label]),
-        h('span', { class: 'week-badge small' }, ['Week ' + MealLog.getWeekNumber(dateStr)])
+        h('span', { class: 'history-date' }, [MealLog.historyDateLabel(dateStr)]),
+        h('span', { class: 'day-badge small ' + dayType }, [plan.label])
       ]),
       h('div', { class: 'history-summary-stats' }, statsChildren)
     ]);
 
-    var card = h('div', { class: 'history-card' }, [summary, details]);
+    var card = h('div', { class: 'history-card' + (isEmpty ? ' history-card-empty' : '') }, [summary, details]);
     summary.addEventListener('click', function () {
       details.classList.toggle('hidden');
     });
