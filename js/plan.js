@@ -89,12 +89,35 @@ MealLog.PLANS = {
 };
 
 // JS Date#getDay(): 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-MealLog.IF_WEEKDAYS = [2, 4];
+// Week 1: Tue/Thu are intermittent fasting days.
+// Week 2: Tue/Thu/Sat are intermittent fasting days.
+// Weeks alternate, anchored to the Monday of the week containing MealLog.WEEK1_ANCHOR_MONDAY.
+MealLog.WEEK1_IF_WEEKDAYS = [2, 4];
+MealLog.WEEK2_IF_WEEKDAYS = [2, 4, 6];
+MealLog.WEEK1_ANCHOR_MONDAY = '2026-07-13';
+
+MealLog.getMondayOfWeek = function (dateStr) {
+  var d = MealLog.parseDate(dateStr);
+  var day = d.getDay();
+  var offset = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + offset);
+  return d;
+};
+
+MealLog.getWeekNumber = function (dateStr) {
+  var monday = MealLog.getMondayOfWeek(dateStr);
+  var anchor = MealLog.getMondayOfWeek(MealLog.WEEK1_ANCHOR_MONDAY);
+  var msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  var diffWeeks = Math.round((monday.getTime() - anchor.getTime()) / msPerWeek);
+  var parity = ((diffWeeks % 2) + 2) % 2;
+  return parity === 0 ? 1 : 2;
+};
 
 MealLog.getDayType = function (dateStr) {
   var d = MealLog.parseDate(dateStr);
   var day = d.getDay();
-  return MealLog.IF_WEEKDAYS.indexOf(day) !== -1 ? 'if' : 'regular';
+  var ifWeekdays = MealLog.getWeekNumber(dateStr) === 1 ? MealLog.WEEK1_IF_WEEKDAYS : MealLog.WEEK2_IF_WEEKDAYS;
+  return ifWeekdays.indexOf(day) !== -1 ? 'if' : 'regular';
 };
 
 MealLog.getPlanForDate = function (dateStr) {
