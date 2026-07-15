@@ -162,6 +162,29 @@
     return h('span', { class: 'chip chip-pending' }, ['Tap to log']);
   }
 
+  // One-line summary of what was actually logged, shown on the day-view card.
+  function mealSummaryText(mealDef, mealData) {
+    if (!mealData || isMealSkipped(mealData)) return '';
+
+    if (mealDef.type === 'choice') {
+      if (mealData.selected === 'other') return mealData.otherText || '';
+      var opt = mealDef.options.filter(function (o) { return o.id === mealData.selected; })[0];
+      return opt ? opt.label : '';
+    }
+
+    var parts = [];
+    mealDef.categories.forEach(function (cat) {
+      var entry = mealData.categories && mealData.categories[cat.id];
+      if (entry && typeof entry === 'object' && (entry.food || entry.grams)) {
+        var bits = [];
+        if (entry.food) bits.push(entry.food);
+        if (entry.grams) bits.push(entry.grams + 'g');
+        parts.push(bits.join(' '));
+      }
+    });
+    return parts.join(', ');
+  }
+
   function renderMealSummaryCard(mealDef, dayRecord) {
     var mealData = dayRecord.meals[mealDef.key];
     var photoUrl = MealLog.MEAL_PHOTOS[mealDef.key];
@@ -171,12 +194,21 @@
       style: 'background-image:url(' + photoUrl + ')'
     }, []);
 
-    var content = h('div', { class: 'meal-card-content' }, [
-      h('div', { class: 'meal-summary-info' }, [
-        h('h3', {}, [mealDef.name]),
+    var summaryText = mealSummaryText(mealDef, mealData);
+
+    var infoChildren = [
+      h('h3', {}, [mealDef.name]),
+      h('div', { class: 'meal-chip-row' }, [
         statusChip(mealData),
         mealData && mealData.acv ? h('span', { class: 'chip chip-acv' }, ['ACV ✓']) : null
-      ]),
+      ])
+    ];
+    if (summaryText) {
+      infoChildren.push(h('div', { class: 'meal-summary-note' }, [summaryText]));
+    }
+
+    var content = h('div', { class: 'meal-card-content' }, [
+      h('div', { class: 'meal-summary-info' }, infoChildren),
       h('span', { class: 'chevron' }, ['›'])
     ]);
 

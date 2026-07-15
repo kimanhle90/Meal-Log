@@ -275,7 +275,7 @@ main#app {
   overflow: hidden;
   border-radius: var(--radius);
   padding: 0;
-  min-height: 88px;
+  min-height: 148px;
   cursor: pointer;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   transition: transform 0.15s ease, background 0.15s ease;
@@ -302,24 +302,39 @@ main#app {
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 88px;
-  padding: 12px 14px 12px 132px;
+  min-height: 148px;
+  padding: 14px 16px 14px 132px;
 }
 
 .meal-summary-info {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  text-align: right;
 }
 
 .meal-summary-info h3 {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 600;
-  width: 100%;
+  text-align: right;
+}
+
+.meal-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.meal-summary-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.35;
+  text-align: right;
 }
 
 .chevron {
