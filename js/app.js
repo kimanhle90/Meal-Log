@@ -5,7 +5,10 @@
     view: 'day', // 'day' | 'meal' | 'history'
     date: MealLog.today(),
     activeMealKey: null,
-    historyRange: 7
+    historyRange: 7,
+    authMode: 'signin', // 'signin' | 'signup'
+    authError: null,
+    authBusy: false
   };
 
   var appEl = document.getElementById('app');
@@ -56,6 +59,19 @@
 
   function render() {
     appEl.innerHTML = '';
+
+    if (typeof MealLog.getAuthState === 'function') {
+      var authState = MealLog.getAuthState();
+      if (authState === 'loading') {
+        appEl.appendChild(renderLoadingView());
+        return;
+      }
+      if (authState === 'signed-out') {
+        appEl.appendChild(renderSignInView());
+        return;
+      }
+    }
+
     if (state.view === 'meal') {
       appEl.appendChild(renderMealDetailView());
     } else if (state.view === 'history') {
@@ -63,6 +79,97 @@
     } else {
       appEl.appendChild(renderDayView());
     }
+  }
+
+  // ---------- Auth gate ----------
+
+  function renderLoadingView() {
+    return h('div', { class: 'view auth-view' }, [
+      h('span', { class: 'brand' }, ['Meal Log'])
+    ]);
+  }
+
+  function renderSignInView() {
+    var isSignUp = state.authMode === 'signup';
+    var emailInput, passwordInput;
+
+    function submit() {
+      var email = emailInput.value.trim();
+      var password = passwordInput.value;
+      if (!email || !password) {
+        state.authError = 'Enter an email and password.';
+        render();
+        return;
+      }
+      state.authError = null;
+      state.authBusy = true;
+      render();
+
+      var action = isSignUp ? MealLog.signUp(email, password) : MealLog.signIn(email, password);
+      action.catch(function (err) {
+        state.authError = err && err.message ? err.message : 'Something went wrong. Try again.';
+      }).then(function () {
+        state.authBusy = false;
+        render();
+      });
+    }
+
+    var form = h('form', {
+      class: 'auth-form',
+      onsubmit: function (e) { e.preventDefault(); submit(); }
+    }, []);
+
+    emailInput = h('input', {
+      type: 'email',
+      class: 'text-input',
+      placeholder: 'Email',
+      autocomplete: 'email',
+      required: 'required',
+      value: state.authEmail || '',
+      oninput: function (e) { state.authEmail = e.target.value; }
+    });
+    passwordInput = h('input', {
+      type: 'password',
+      class: 'text-input',
+      placeholder: 'Password',
+      autocomplete: isSignUp ? 'new-password' : 'current-password',
+      required: 'required',
+      value: state.authPassword || '',
+      oninput: function (e) { state.authPassword = e.target.value; }
+    });
+
+    form.appendChild(emailInput);
+    form.appendChild(passwordInput);
+
+    if (state.authError) {
+      form.appendChild(h('div', { class: 'auth-error' }, [state.authError]));
+    }
+
+    form.appendChild(h('button', {
+      class: 'history-link sign-in-btn',
+      type: 'submit'
+    }, [state.authBusy ? 'Please wait…' : (isSignUp ? 'Create account' : 'Sign in')]));
+
+    return h('div', { class: 'view auth-view' }, [
+      h('div', { class: 'auth-card' }, [
+        h('div', { class: 'detail-eyebrow' }, ['Meal Log']),
+        h('h1', { class: 'page-headline' }, [isSignUp ? 'Create account' : 'Sign in']),
+        h('p', { class: 'auth-copy' }, [
+          isSignUp
+            ? 'Create an account to sync your meal log across devices.'
+            : 'Sign in to sync your meal log across devices.'
+        ]),
+        form,
+        h('button', {
+          class: 'link-toggle-btn',
+          onclick: function () {
+            state.authMode = isSignUp ? 'signin' : 'signup';
+            state.authError = null;
+            render();
+          }
+        }, [isSignUp ? 'Already have an account? Sign in' : 'Need an account? Create one'])
+      ])
+    ]);
   }
 
   // ---------- Day view (main) ----------
@@ -433,12 +540,22 @@
   function renderHistoryView() {
     var container = h('div', { class: 'view history-view' }, []);
 
-    var topBar = h('div', { class: 'top-bar' }, [
-      h('span', { class: 'brand' }, ['Meal Log']),
+    var topBarActions = [
       h('button', {
         class: 'history-link',
         onclick: function () { state.view = 'day'; render(); }
       }, ['⌂ Home'])
+    ];
+    if (typeof MealLog.signOut === 'function' && MealLog.getCurrentUser()) {
+      topBarActions.push(h('button', {
+        class: 'history-link',
+        onclick: function () { MealLog.signOut(); }
+      }, ['Sign out']));
+    }
+
+    var topBar = h('div', { class: 'top-bar' }, [
+      h('span', { class: 'brand' }, ['Meal Log']),
+      h('div', { class: 'top-bar-actions' }, topBarActions)
     ]);
     container.appendChild(topBar);
 
@@ -556,6 +673,13 @@
     }
 
     return h('div', { class: 'hm-block' }, rows);
+  }
+
+  if (typeof MealLog.onAuthStateChanged === 'function') {
+    MealLog.onAuthStateChanged(function () { render(); });
+  }
+  if (typeof MealLog.onDataChanged === 'function') {
+    MealLog.onDataChanged(function () { render(); });
   }
 
   render();
