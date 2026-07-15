@@ -164,12 +164,21 @@
 
   function renderMealSummaryCard(mealDef, dayRecord) {
     var mealData = dayRecord.meals[mealDef.key];
-    var visual = getVisual(mealDef.key);
+    var photoUrl = MealLog.MEAL_PHOTOS[mealDef.key];
 
-    var thumb = h('div', {
-      class: 'meal-thumb',
-      style: 'background:' + visual.gradient
-    }, [h('span', { class: 'meal-emoji' }, [visual.emoji])]);
+    var photo = h('div', {
+      class: 'meal-photo',
+      style: 'background-image:url(' + photoUrl + ')'
+    }, []);
+
+    var content = h('div', { class: 'meal-card-content' }, [
+      h('div', { class: 'meal-summary-info' }, [
+        h('h3', {}, [mealDef.name]),
+        statusChip(mealData),
+        mealData && mealData.acv ? h('span', { class: 'chip chip-acv' }, ['ACV ✓']) : null
+      ]),
+      h('span', { class: 'chevron' }, ['›'])
+    ]);
 
     var card = h('div', {
       class: 'meal-summary-card',
@@ -178,15 +187,7 @@
         state.view = 'meal';
         render();
       }
-    }, [
-      thumb,
-      h('div', { class: 'meal-summary-info' }, [
-        h('h3', {}, [mealDef.name]),
-        statusChip(mealData),
-        mealData && mealData.acv ? h('span', { class: 'chip chip-acv' }, ['ACV ✓']) : null
-      ]),
-      h('span', { class: 'chevron' }, ['›'])
-    ]);
+    }, [photo, content]);
 
     return card;
   }

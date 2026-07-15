@@ -5,13 +5,23 @@ var MealLog = window.MealLog || {};
 
 MealLog.ACV_NOTE = 'Apple cider vinegar: 5ml mixed in 150ml water';
 
-// Visual treatment per meal, used in place of a real photo (card thumbnail + detail hero).
+// Visual treatment per meal. Used for the meal detail hero (gradient + emoji, no
+// real photo available there) and as a fallback for the day-view card photo.
 MealLog.MEAL_VISUALS = {
   breakfast: { emoji: '🍳', gradient: 'linear-gradient(135deg, #ffd76e, #ff9a5a)' },
   lunch: { emoji: '🥗', gradient: 'linear-gradient(135deg, #8fd3a0, #4f9d69)' },
   dinner: { emoji: '🍛', gradient: 'linear-gradient(135deg, #f2a65a, #c96a4e)' },
   lateSnack: { emoji: '🍎', gradient: 'linear-gradient(135deg, #ff8fa3, #ff6b6b)' },
   snack: { emoji: '🍇', gradient: 'linear-gradient(135deg, #b28fe0, #7b6ee0)' }
+};
+
+// Real food photos used on the day-view meal cards.
+MealLog.MEAL_PHOTOS = {
+  breakfast: 'images/breakfast.jpg',
+  lunch: 'images/lunch.jpg',
+  dinner: 'images/dinner.jpg',
+  lateSnack: 'images/snack.jpg',
+  snack: 'images/snack.jpg'
 };
 
 MealLog.PLANS = {
