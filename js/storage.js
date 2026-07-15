@@ -36,6 +36,16 @@ MealLog.friendlyDate = function (dateStr) {
   return MealLog.WEEKDAY_NAMES[d.getDay()] + ', ' + MealLog.MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 };
 
+// Split for display hierarchy: a small eyebrow (weekday) above a big headline (month/day/year).
+MealLog.friendlyDateParts = function (dateStr) {
+  var d = MealLog.parseDate(dateStr);
+  return {
+    weekday: MealLog.WEEKDAY_NAMES[d.getDay()],
+    headline: MealLog.MONTH_NAMES[d.getMonth()] + ' ' + d.getDate(),
+    year: '' + d.getFullYear()
+  };
+};
+
 MealLog._readAll = function () {
   try {
     var raw = localStorage.getItem(MealLog.STORAGE_KEY);
