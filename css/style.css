@@ -351,11 +351,6 @@ main#app {
   font-weight: 600;
 }
 
-.chip-pending {
-  background: var(--glass-bg-strong);
-  color: var(--muted);
-}
-
 .chip-logged {
   background: var(--success-bg);
   color: var(--success);
