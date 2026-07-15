@@ -607,6 +607,11 @@ main#app {
   flex-shrink: 0;
 }
 
+.stat-weight {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .history-details {
   border-top: 1px solid var(--border);
   padding: 12px 14px;

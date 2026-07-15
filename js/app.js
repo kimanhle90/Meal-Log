@@ -438,12 +438,10 @@
 
     var loggedCount = 0;
     var skippedCount = 0;
-    var acvCount = 0;
     plan.meals.forEach(function (m) {
       var md = meals[m.key];
       if (isMealLogged(md)) loggedCount++;
       if (isMealSkipped(md)) skippedCount++;
-      if (md && md.acv) acvCount++;
     });
 
     var details = h('div', { class: 'history-details hidden' }, []);
@@ -452,9 +450,11 @@
     });
 
     var statsChildren = [
-      h('span', { class: 'stat' }, [loggedCount + '/' + plan.meals.length + ' meals']),
-      h('span', { class: 'stat' }, [acvCount + '/' + plan.meals.length + ' ACV'])
+      h('span', { class: 'stat' }, [loggedCount + '/' + plan.meals.length + ' meals'])
     ];
+    if (dayRecord && dayRecord.weight) {
+      statsChildren.push(h('span', { class: 'stat stat-weight' }, [dayRecord.weight + ' lb']));
+    }
     if (skippedCount > 0) {
       statsChildren.push(h('span', { class: 'stat' }, [skippedCount + ' skipped']));
     }
