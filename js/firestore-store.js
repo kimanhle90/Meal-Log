@@ -80,14 +80,46 @@
     // the returned object in place and hand it back to writeAll(), which
     // needs to diff it against the still-unmutated cache to know what
     // actually changed.
-    return JSON.parse(JSON.stringify(cache));
+    //
+    // storage.js only ever replaces a whole meal entry (all[date].meals[key]
+    // = mealData) or a date's weight/dayType — it never mutates a meal
+    // entry's own fields in place. So a 2-level-deep copy (fresh per-date
+    // object, fresh .meals object) is all that's needed to isolate cache
+    // from those mutations; meal entries themselves can stay shared
+    // references. That avoids re-serializing every cached day's full
+    // contents (including any embedded photo data URIs) on every read,
+    // which otherwise gets slower the more days/photos pile up.
+    var copy = {};
+    Object.keys(cache).forEach(function (dateStr) {
+      var rec = cache[dateStr];
+      copy[dateStr] = {
+        dayType: rec.dayType,
+        weight: rec.weight,
+        meals: Object.assign({}, rec.meals)
+      };
+    });
+    return copy;
   };
+
+  // Two day-records are equivalent if every meal entry is the same
+  // reference as before — cheap regardless of how large a meal's photo
+  // data is, unlike a full JSON.stringify comparison.
+  function dayRecordsEqual(a, b) {
+    if (a === b) return true;
+    if (a.dayType !== b.dayType || a.weight !== b.weight) return false;
+    var aMeals = a.meals || {};
+    var bMeals = b.meals || {};
+    var aKeys = Object.keys(aMeals);
+    var bKeys = Object.keys(bMeals);
+    if (aKeys.length !== bKeys.length) return false;
+    return aKeys.every(function (key) { return aMeals[key] === bMeals[key]; });
+  }
 
   FirestoreStore.prototype.writeAll = function (data) {
     var collectionRef = this.collectionRef;
     Object.keys(data).forEach(function (dateStr) {
       var record = data[dateStr];
-      if (cache[dateStr] && JSON.stringify(cache[dateStr]) === JSON.stringify(record)) {
+      if (cache[dateStr] && dayRecordsEqual(cache[dateStr], record)) {
         return;
       }
       cache[dateStr] = record;
